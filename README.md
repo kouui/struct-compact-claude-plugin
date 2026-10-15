@@ -1,6 +1,6 @@
 # struct-compact-claude-plugin
 
-Claude Code mod (plugin name `struct-compact`). On `auto` and `manual` compaction it slims the transcript (text verbatim; tool calls reduced to name + the file paths they read/wrote/deleted; results to one-line notes), has `claude -p --model haiku` write a structured handoff (original tasks, must-read files, progress, cautions, key decisions), and returns that plus the last 4 text messages (user and assistant; tool calls and results excluded). Any failure falls back to the engine's default compaction.
+Claude Code mod (plugin name `struct-compact`). On `auto` and `manual` compaction it slims the transcript (text verbatim; tool calls reduced to a name and the file paths they read/wrote/deleted, some tools ignored; results to one-line notes), has `claude -p --model haiku` write a structured handoff (original tasks, must-read files, progress, cautions, key decisions), and returns that plus the last 4 text messages (user and assistant; tool calls and results excluded). Any failure falls back to the engine's default compaction.
 
 ## Install
 
@@ -14,7 +14,16 @@ Or try it from a checkout without installing: `claude --plugin-dir <this folder>
 ## Requirements
 
 - The `claude` CLI on `PATH` (the mod runs `claude -p`, which uses your Claude Code login and counts against your usage).
-- The transcript is sent to the `haiku` model for summarization. Paths and tool-call summaries are included; tool output bodies are not.
+- A slimmed transcript is sent to the `haiku` model for summarization:
+  - user and assistant text: verbatim
+  - Bash / PowerShell: `description`, the first 50 chars of the command, its length, and the file paths it touches
+  - Read / Edit / Write / MultiEdit / NotebookEdit: the file path only, no content
+  - Agent / Task: `description` and `model` only
+  - Grep / Glob: the pattern (first 80 chars) and path
+  - TodoWrite: full JSON
+  - WebFetch, WebSearch and every other tool (MCP, Skill, ...): ignored, call and result
+  - tool results: `ok <n> chars`, or bare `ERR` for errors
+- The summarizer may also read files itself (`--allowedTools Read,Grep,Glob`).
 
 ## Layout
 
