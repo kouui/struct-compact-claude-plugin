@@ -318,8 +318,9 @@ export function slimToolUse(tool, input = {}, opts = {}) {
       return { tool, paths: { W: [norm(String(input.file_path ?? input.notebook_path ?? ''), cwdN)] } }
     case 'Agent':
     case 'Task': {
-      const prompt = String(input.prompt ?? '')
-      return { tool, desc: input.description, model: input.model, prompt_head: squash(prompt, head), paths: extractPaths(prompt, opts) }
+      // const prompt = String(input.prompt ?? '')
+      // return { tool, desc: input.description, model: input.model, prompt_head: squash(prompt, head), paths: extractPaths(prompt, opts) }
+      return { tool, desc: input.description, model: input.model }
     }
     case 'Grep':
     case 'Glob':
