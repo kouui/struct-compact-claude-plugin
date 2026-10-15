@@ -1,0 +1,9 @@
+{
+  "name": "smart-compact",
+  "version": "0.1.0",
+  "description": "Auto-compaction via a slimmed transcript summarized by `claude -p --model haiku` into a structured handoff.",
+  "author": { "name": "kouui" },
+  "homepage": "https://github.com/kouui/smart-compact-claude-plugin",
+  "repository": "https://github.com/kouui/smart-compact-claude-plugin",
+  "keywords": ["compact", "context", "handoff", "mod", "hooks"]
+}

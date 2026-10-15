@@ -1,0 +1,15 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "smart-compact-claude-plugin",
+  "description": "Claude Code mod that replaces default compaction with a structured haiku-written handoff.",
+  "owner": { "name": "kouui" },
+  "plugins": [
+    {
+      "name": "smart-compact",
+      "description": "On auto and manual compaction, slim the transcript, have `claude -p --model haiku` write a structured handoff, and keep the last 10 messages.",
+      "category": "productivity",
+      "source": "./",
+      "homepage": "https://github.com/kouui/smart-compact-claude-plugin"
+    }
+  ]
+}
