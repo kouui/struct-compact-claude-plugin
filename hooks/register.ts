@@ -15,7 +15,7 @@ const SCHEMA = {
       // description: 'Files the agent must re-read to continue (specs, plans, notes, in-progress outputs)',
       description:
         'Files the agent must re-read to continue (specs, plans, notes, in-progress outputs). ' +
-        'Never list the session transcript itself (a .jsonl file, or anything under .claude/projects).',
+        'Never list the session transcript itself (the .jsonl file under .claude/projects).',
     },
     progress: {
       type: 'object',
@@ -72,7 +72,8 @@ const bullets = (a?: string[]) => (a && a.length ? a.map((x) => `- ${x}`).join('
 function renderSummary(s: any): string {
   // const files = (s.must_read_files ?? []).map((f: any) => `- ${f.path} — ${f.why}`).join('\n') || '- (none)'
   // drop the original session transcript if the summarizer listed it anyway
-  const isTranscript = (p: unknown) => /\.jsonl$/i.test(String(p ?? '').trim()) || /[\\/]\.claude[\\/]projects[\\/]/i.test(String(p ?? ''))
+  // session transcripts live under .claude/projects; a project's own .jsonl data files stay allowed
+  const isTranscript = (p: unknown) => /(^|[\\/])\.claude[\\/]projects[\\/]/i.test(String(p ?? ''))
   const files =
     (s.must_read_files ?? [])
       .filter((f: any) => !isTranscript(f?.path))
