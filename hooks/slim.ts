@@ -327,7 +327,8 @@ export function slimToolUse(tool, input = {}, opts = {}) {
       return { tool, pattern: squash(input.pattern, 80), path: input.path && norm(String(input.path), cwdN) }
     case 'WebFetch':
     case 'WebSearch':
-      return { tool, target: squash(input.url ?? input.query, 120) }
+      // return { tool, target: squash(input.url ?? input.query, 120) }
+      return null // ignored: neither the call nor its result is passed on
     default:
       return { tool, input_head: squash(JSON.stringify(input), head) }
   }

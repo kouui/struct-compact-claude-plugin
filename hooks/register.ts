@@ -44,9 +44,11 @@ const withFocus = (extra?: string) => (extra && extra.trim() ? `${INSTRUCTION_BA
 function renderTranscript(messages: readonly SessionMessage[], cwd?: string): string {
   const lines: string[] = []
   const nameById = new Map<string, string>()
+  const ignored = new Set<string>() // tool_use ids slimToolUse() drops; their results are dropped too
   for (const m of messages) {
     if (m.role === 'user') {
       for (const r of m.toolResults ?? []) {
+        if (ignored.has(r.tool_use_id)) continue
         const s = slimToolResult(r.text, r.isError, 160)
         lines.push(`   ↳ ${nameById.get(r.tool_use_id) ?? 'tool'}: ${typeof s === 'string' ? s : JSON.stringify(s)}`)
       }
@@ -54,8 +56,12 @@ function renderTranscript(messages: readonly SessionMessage[], cwd?: string): st
     } else {
       if (m.text.trim()) lines.push(`\n[ASSISTANT] ${m.text.trim()}`)
       for (const u of m.toolUses) {
-        nameById.set(u.tool_use_id, u.tool)
         const s = slimToolUse(u.tool, u.input, { cwd })
+        if (!s) {
+          ignored.add(u.tool_use_id)
+          continue
+        }
+        nameById.set(u.tool_use_id, u.tool)
         const { tool, ...rest } = s as Record<string, unknown>
         lines.push(`  • ${tool} ${JSON.stringify(rest)}`)
       }
