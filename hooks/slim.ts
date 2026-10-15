@@ -329,8 +329,11 @@ export function slimToolUse(tool, input = {}, opts = {}) {
     case 'WebSearch':
       // return { tool, target: squash(input.url ?? input.query, 120) }
       return null // ignored: neither the call nor its result is passed on
+    case 'TodoWrite':
+      return { tool, input: JSON.stringify(input) } // full JSON: the task list is the progress record
     default:
-      return { tool, input_head: squash(JSON.stringify(input), head) }
+      // return { tool, input_head: squash(JSON.stringify(input), head) }
+      return null // every other tool (MCP, Skill, ...) is ignored, call and result
   }
 }
 
