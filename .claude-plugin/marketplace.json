@@ -6,7 +6,7 @@
   "plugins": [
     {
       "name": "struct-compact",
-      "description": "On auto and manual compaction, slim the transcript, have `claude -p --model haiku` write a structured handoff, and keep the last 4 messages.",
+      "description": "On auto and manual compaction, slim the transcript, have `claude -p --model haiku` write a structured handoff, and keep the last 4 text messages (user and assistant; tool calls and results excluded).",
       "category": "productivity",
       "source": "./",
       "homepage": "https://github.com/kouui/struct-compact-claude-plugin"
