@@ -66,7 +66,7 @@ function renderTranscript(messages: readonly SessionMessage[], cwd?: string): st
 
 const bullets = (a?: string[]) => (a && a.length ? a.map((x) => `- ${x}`).join('\n') : '- (none)')
 
-function renderSummary(s: any, latestUser?: string): string {
+function renderSummary(s: any): string {
   const files = (s.must_read_files ?? []).map((f: any) => `- ${f.path} — ${f.why}`).join('\n') || '- (none)'
   const dec = (s.key_decisions ?? []).map((d: any) => `- ${d.decision} (${d.reason})`).join('\n') || '- (none)'
   return [
@@ -77,7 +77,6 @@ function renderSummary(s: any, latestUser?: string): string {
     '', '## Progress', '### Done', bullets(s.progress?.done), '### In progress', bullets(s.progress?.in_progress), '### Next', bullets(s.progress?.next),
     '', '## Cautions', bullets(s.cautions),
     '', '## Key decisions', dec,
-    ...(latestUser ? ['', '## Latest user message (verbatim)', latestUser] : []),
     '',
     'Continue the work from where it stopped. Do not ask the user for confirmation and do not recap this summary; re-read the must-read files if you need their details, then carry on with the next step.',
   ].join('\n')
@@ -102,16 +101,12 @@ export const register: Register = (on) => {
       const s = out.structured_output
       if (!s || !Array.isArray(s.original_tasks)) throw new Error('no structured_output')
 
-      // keep the last KEEP_TAIL messages that carry text; tool calls and tool results neither count nor are kept
-      const tail: SessionMessage[] = []
-      for (const m of msgs.filter((x) => x.text.trim()).slice(-KEEP_TAIL)) {
-        const prev = tail[tail.length - 1]
-        if (prev && prev.role === m.role) prev.text += '\n\n' + m.text.trim() // keep roles alternating
-        else tail.push({ role: m.role, text: m.text.trim(), toolUses: [] })
-      }
-      // the summary is a user message, so a leading user message is folded into it instead of following it
-      const latestUser = tail[0]?.role === 'user' ? tail.shift()!.text : undefined
-      const summary: SessionMessage = { role: 'user', text: renderSummary(s, latestUser), toolUses: [] }
+      // keep the last KEEP_TAIL messages that carry text, one by one; tool calls and tool results neither count nor are kept
+      const tail: SessionMessage[] = msgs
+        .filter((x) => x.text.trim())
+        .slice(-KEEP_TAIL)
+        .map((x) => ({ role: x.role, text: x.text, toolUses: [] }))
+      const summary: SessionMessage = { role: 'user', text: renderSummary(s), toolUses: [] }
       $.ui.toast('struct-compact: summarized by haiku')
       return { messages: [summary, ...tail] }
     } catch (err) {
