@@ -12,7 +12,10 @@ const SCHEMA = {
     must_read_files: {
       type: 'array',
       items: { type: 'object', properties: { path: { type: 'string' }, why: { type: 'string' } }, required: ['path', 'why'] },
-      description: 'Files the agent must re-read to continue (specs, plans, notes, in-progress outputs)',
+      // description: 'Files the agent must re-read to continue (specs, plans, notes, in-progress outputs)',
+      description:
+        'Files the agent must re-read to continue (specs, plans, notes, in-progress outputs). ' +
+        'Never list the session transcript itself (a .jsonl file, or anything under .claude/projects).',
     },
     progress: {
       type: 'object',
@@ -67,7 +70,14 @@ function renderTranscript(messages: readonly SessionMessage[], cwd?: string): st
 const bullets = (a?: string[]) => (a && a.length ? a.map((x) => `- ${x}`).join('\n') : '- (none)')
 
 function renderSummary(s: any): string {
-  const files = (s.must_read_files ?? []).map((f: any) => `- ${f.path} — ${f.why}`).join('\n') || '- (none)'
+  // const files = (s.must_read_files ?? []).map((f: any) => `- ${f.path} — ${f.why}`).join('\n') || '- (none)'
+  // drop the original session transcript if the summarizer listed it anyway
+  const isTranscript = (p: unknown) => /\.jsonl$/i.test(String(p ?? '').trim()) || /[\\/]\.claude[\\/]projects[\\/]/i.test(String(p ?? ''))
+  const files =
+    (s.must_read_files ?? [])
+      .filter((f: any) => !isTranscript(f?.path))
+      .map((f: any) => `- ${f.path} — ${f.why}`)
+      .join('\n') || '- (none)'
   const dec = (s.key_decisions ?? []).map((d: any) => `- ${d.decision} (${d.reason})`).join('\n') || '- (none)'
   return [
     'This session is being continued after the context was compacted. The handoff below was written from the session history.',
