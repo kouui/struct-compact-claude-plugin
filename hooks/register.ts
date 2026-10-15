@@ -1,7 +1,7 @@
 import type { Register, SessionMessage } from 'claude-code'
 import { extractPaths, slimToolUse, slimToolResult } from './slim'
 
-const KEEP_TAIL = 10 // messages kept verbatim after the summary (cut lands on an assistant message)
+const KEEP_TAIL = 4 // messages kept verbatim after the summary (cut lands on an assistant message)
 const MAX_TRANSCRIPT = 600_000 // chars handed to the summarizer
 const TIMEOUT_MS = 480_000
 
