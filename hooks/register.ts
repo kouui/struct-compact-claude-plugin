@@ -105,10 +105,10 @@ export const register: Register = (on) => {
       while (cut < msgs.length && msgs[cut].role !== 'assistant') cut++
       const tail = msgs.slice(cut)
       const summary: SessionMessage = { role: 'user', text: renderSummary(s), toolUses: [] }
-      $.ui.toast('smart-compact: summarized by haiku')
+      $.ui.toast('struct-compact: summarized by haiku')
       return { messages: [summary, ...tail] }
     } catch (err) {
-      $.ui.toast(`smart-compact failed, using default: ${String((err as Error)?.message ?? err).slice(0, 80)}`)
+      $.ui.toast(`struct-compact failed, using default: ${String((err as Error)?.message ?? err).slice(0, 80)}`)
       return next(e)
     }
   }).catch(($, e, next) => next(e))

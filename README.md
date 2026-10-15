@@ -1,12 +1,12 @@
-# smart-compact-claude-plugin
+# struct-compact-claude-plugin
 
-Claude Code mod (plugin name `smart-compact`). On `auto` and `manual` compaction it slims the transcript (text verbatim; tool calls reduced to name + the file paths they read/wrote/deleted; results to one-line notes), has `claude -p --model haiku` write a structured handoff (original tasks, must-read files, progress, cautions, key decisions), and returns that plus the last 10 messages. Any failure falls back to the engine's default compaction.
+Claude Code mod (plugin name `struct-compact`). On `auto` and `manual` compaction it slims the transcript (text verbatim; tool calls reduced to name + the file paths they read/wrote/deleted; results to one-line notes), has `claude -p --model haiku` write a structured handoff (original tasks, must-read files, progress, cautions, key decisions), and returns that plus the last 10 messages. Any failure falls back to the engine's default compaction.
 
 ## Install
 
 ```bash
-claude plugin marketplace add kouui/smart-compact-claude-plugin
-claude plugin install smart-compact@smart-compact-claude-plugin -s user
+claude plugin marketplace add kouui/struct-compact-claude-plugin
+claude plugin install struct-compact@struct-compact-claude-plugin -s user
 ```
 
 Or try it from a checkout without installing: `claude --plugin-dir <this folder>`.
