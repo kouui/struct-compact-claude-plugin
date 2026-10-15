@@ -1,6 +1,6 @@
 {
   "name": "struct-compact",
-  "version": "0.4.0",
+  "version": "0.4.2",
   "description": "Auto-compaction via a slimmed transcript summarized by `claude -p --model haiku` into a structured handoff.",
   "author": {
     "name": "kouui"
@@ -25,7 +25,7 @@
       "type": "number",
       "title": "Warn at (% of window)",
       "description": "How close to the compaction point, as a percent of the compaction window, the reminder is sent.",
-      "default": 8,
+      "default": 12,
       "min": 1,
       "max": 50
     },
@@ -34,6 +34,12 @@
       "title": "Notes file",
       "description": "Where the reminder suggests the agent writes its notes.",
       "default": "./tmp/context-notes.md"
+    },
+    "autoCompactPctOverride": {
+      "type": "string",
+      "title": "Auto-compact percent override",
+      "description": "Set to the value of CLAUDE_AUTOCOMPACT_PCT_OVERRIDE when the reminder cannot see that environment variable. Empty reads the environment.",
+      "default": ""
     }
   }
 }

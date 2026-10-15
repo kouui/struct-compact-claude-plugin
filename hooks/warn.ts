@@ -31,3 +31,15 @@ export function reminderText(tokens: number, threshold: number, notesFile: strin
     'Do not stop to ask. Keep the note short; the compaction summary lists files you wrote.'
   )
 }
+
+/**
+ * The point where auto-compaction really runs. The engine reports `autoCompactThreshold` (the compaction
+ * window less 20k for the summary and a 13k buffer); `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE` lowers it to that
+ * percent of the window less the 20k, which is `threshold + 13000`. Derived from the numbers the engine
+ * shows (500k window, override 90: reported 467000, compaction at about 432000).
+ */
+export function effectiveThreshold(threshold: number, pctOverride: string | undefined): number {
+  const pct = Number(pctOverride)
+  if (!(pct > 0 && pct < 100)) return threshold
+  return Math.min(threshold, Math.floor(((threshold + 13_000) * pct) / 100))
+}

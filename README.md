@@ -34,7 +34,7 @@ Tool results are slimmed before they are summarized, so what an agent learned fr
 The files it writes appear in the summary's `must_read_files`, so the notes are read again after compaction.
 
 - Sent once per compaction cycle, from the main session only (not subagents), and armed again after compaction or when the context has fallen back by twice the margin.
-- The distance is measured to the point where auto-compaction runs (`autoCompactThreshold`), as a percent of the compaction window (`autoCompactWindow`).
+- The distance is measured to the point where auto-compaction really runs: the engine's `autoCompactThreshold`, lowered by `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE` when that is set (500k window, override 90: 467k reported, about 432k used), as a percent of the compaction window (`autoCompactWindow`).
 
 ### Options
 
@@ -53,7 +53,8 @@ Set them in `/config` (rows named after the plugin), or in `settings.json`:
 | Option | Default | Meaning |
 | --- | --- | --- |
 | `warnEnabled` | `true` | Turn the reminder off with `false` |
-| `warnPercent` | `8` | Remind when this percent of the compaction window is left before compaction (1 to 50) |
+| `warnPercent` | `12` | Remind when this percent of the compaction window is left before compaction (1 to 50) |
+| `autoCompactPctOverride` | empty | Your `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE` value, for when the hook cannot read the environment variable. Empty reads the environment |
 | `notesFile` | `./tmp/context-notes.md` | The file name the reminder suggests |
 
 ## Layout

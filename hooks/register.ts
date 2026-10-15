@@ -1,6 +1,6 @@
 import type { Register, SessionMessage } from 'claude-code'
 import { extractPaths, slimToolUse, slimToolResult } from './slim'
-import { isNearCompaction, isRearmed, reminderText } from './warn'
+import { effectiveThreshold, isNearCompaction, isRearmed, reminderText } from './warn'
 
 const KEEP_TAIL = 4 // text messages (user and assistant, no tool calls or results) kept verbatim after the summary
 const MAX_TRANSCRIPT = 600_000 // chars handed to the summarizer
@@ -101,19 +101,41 @@ function renderSummary(s: any): string {
 }
 
 // The reminder before auto-compaction. Module variables reset on a hot reload, which only re-arms it.
-const warn = { isEnabled: true, marginPercent: 8, notesFile: './tmp/context-notes.md', isWarned: false, threshold: 0, window: 0, readAt: 0 }
+const warn = { isEnabled: true, marginPercent: 12, notesFile: './tmp/context-notes.md', pctOverride: '', isWarned: false, isFailureShown: false, threshold: 0, window: 0, readAt: 0 }
 const THRESHOLD_TTL_MS = 60_000 // the compaction point moves little; the costly read is repeated at most this often
+
+/** CLAUDE_AUTOCOMPACT_PCT_OVERRIDE: the plugin option, else the engine's env API, else the process environment. */
+async function readPctOverride($: any): Promise<string | undefined> {
+  if (warn.pctOverride) return warn.pctOverride
+  try {
+    const v = await $.env.get('CLAUDE_AUTOCOMPACT_PCT_OVERRIDE')
+    if (v) return String(v)
+  } catch { /* fall through */ }
+  return typeof process !== 'undefined' ? process.env?.CLAUDE_AUTOCOMPACT_PCT_OVERRIDE : undefined
+}
 
 async function warnBeforeCompaction($: any, e: any, next: any): Promise<unknown> {
   const result = await next(e)
   if (!warn.isEnabled || e.agentId || !result || result.deny) return result
+  try {
+    return await remind($, result)
+  } catch (err) {
+    // never block the tool result, but say once that the reminder is not working instead of failing silently
+    if (!warn.isFailureShown) {
+      warn.isFailureShown = true
+      $.ui.toast(`struct-compact reminder failed: ${String((err as Error)?.message ?? err).slice(0, 80)}`)
+    }
+    return result
+  }
+}
 
+async function remind($: any, result: any): Promise<unknown> {
   const now = await $.clock.now()
   if (warn.threshold === 0 || now - warn.readAt > THRESHOLD_TTL_MS) {
     const b = (await $.session.usage({ breakdown: 'summary' })).context.breakdown
     warn.readAt = now
     if (b?.autoCompactThreshold && b.rawMaxTokens) {
-      warn.threshold = b.autoCompactThreshold
+      warn.threshold = effectiveThreshold(b.autoCompactThreshold, await readPctOverride($))
       warn.window = b.rawMaxTokens
     }
   }
@@ -133,7 +155,8 @@ async function warnBeforeCompaction($: any, e: any, next: any): Promise<unknown>
 
 export const register: Register = (on, options) => {
   warn.isEnabled = options.warnEnabled !== false
-  warn.marginPercent = Number(options.warnPercent) > 0 ? Number(options.warnPercent) : 8
+  warn.marginPercent = Number(options.warnPercent) > 0 ? Number(options.warnPercent) : 12
+  warn.pctOverride = String(options.autoCompactPctOverride || '')
   warn.notesFile = String(options.notesFile || './tmp/context-notes.md')
 
   // auto and manual (/compact) both go through the haiku summary; precompute/plugin pass straight through

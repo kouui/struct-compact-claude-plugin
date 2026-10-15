@@ -1,6 +1,6 @@
 import { test, expect, mock } from 'claude-code/testing'
 
-import { isNearCompaction, isRearmed, reminderText } from '../hooks/warn'
+import { effectiveThreshold, isNearCompaction, isRearmed, reminderText } from '../hooks/warn'
 
 test('isNearCompaction compares the distance to the compaction point with the margin', async () => {
   // window 500k, compaction at 467k, margin 8% = 40k
@@ -42,4 +42,12 @@ test('a tool result gets the reminder once, near the compaction point', async ($
 
   const second = (await $.tool.call({ tool: 'Bash', input: { command: 'ls' } })) as { context?: string[] }
   expect(second.context).toBeUndefined()
+})
+
+test('effectiveThreshold lowers the compaction point by CLAUDE_AUTOCOMPACT_PCT_OVERRIDE', async () => {
+  expect(effectiveThreshold(467_000, undefined)).toBe(467_000)
+  expect(effectiveThreshold(467_000, '90')).toBe(432_000) // 90% of the 480k window less nothing else
+  expect(effectiveThreshold(467_000, '100')).toBe(467_000)
+  expect(effectiveThreshold(467_000, 'abc')).toBe(467_000)
+  expect(effectiveThreshold(467_000, '99')).toBe(467_000) // 475,200 is above the engine's own point
 })
