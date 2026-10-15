@@ -297,6 +297,8 @@ const squash = (s, n) => {
   return t.length > n ? t.slice(0, n) + `…(+${t.length - n})` : t
 }
 
+const BASH_HEAD = 50 // chars of a shell command kept; the rest of it is dropped
+
 export function slimToolUse(tool, input = {}, opts = {}) {
   const head = opts.headChars ?? 160
   const cwdN = opts.cwd ? opts.cwd.replace(/\\+/g, '/').replace(/\/$/, '').toLowerCase() : null
@@ -304,7 +306,8 @@ export function slimToolUse(tool, input = {}, opts = {}) {
     case 'Bash':
     case 'PowerShell': {
       const cmd = String(input.command ?? '')
-      return { tool, desc: input.description, cmd_head: squash(cmd, head), n_chars: cmd.length, paths: extractPaths(cmd, opts) }
+      // return { tool, desc: input.description, cmd_head: squash(cmd, head), n_chars: cmd.length, paths: extractPaths(cmd, opts) }
+      return { tool, desc: input.description, cmd_head: squash(cmd, BASH_HEAD), n_chars: cmd.length, paths: extractPaths(cmd, opts) }
     }
     case 'Read':
       return { tool, paths: { R: [norm(String(input.file_path ?? ''), cwdN)] } }
