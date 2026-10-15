@@ -339,5 +339,6 @@ export function slimToolUse(tool, input = {}, opts = {}) {
 
 export function slimToolResult(text, isError, errChars = 200) {
   const t = String(text ?? '')
-  return isError ? `ERR ${squash(t, errChars)} (${t.length} chars)` : `ok ${t.length} chars`
+  // return isError ? `ERR ${squash(t, errChars)} (${t.length} chars)` : `ok ${t.length} chars`
+  return isError ? 'ERR' : `ok ${t.length} chars`
 }
