@@ -5,8 +5,8 @@ Claude Code mod (plugin name `struct-compact`). On `auto` and `manual` compactio
 ## Install
 
 ```bash
-claude plugin marketplace add kouui/struct-compact-claude-plugin
-claude plugin install struct-compact@struct-compact-claude-plugin -s user
+claude plugin marketplace add kouui/magic-claude-code-plugin
+claude plugin install struct-compact@magic-claude-code-plugin -s user
 ```
 
 Or try it from a checkout without installing: `claude --plugin-dir <this folder>`.
@@ -29,7 +29,6 @@ Or try it from a checkout without installing: `claude --plugin-dir <this folder>
 
 ```text
 .claude-plugin/plugin.json
-.claude-plugin/marketplace.json
 hooks/hooks.json     # { "modules": ["./register.ts"] }
 hooks/register.ts    # session.compact handler, summary schema, rendering
 hooks/slim.ts        # rule-based slimming of tool calls and results
