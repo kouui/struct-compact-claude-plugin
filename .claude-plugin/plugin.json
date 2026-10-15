@@ -1,9 +1,39 @@
 {
   "name": "struct-compact",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Auto-compaction via a slimmed transcript summarized by `claude -p --model haiku` into a structured handoff.",
-  "author": { "name": "kouui" },
+  "author": {
+    "name": "kouui"
+  },
   "homepage": "https://github.com/kouui/struct-compact-claude-plugin",
   "repository": "https://github.com/kouui/struct-compact-claude-plugin",
-  "keywords": ["compact", "context", "handoff", "mod", "hooks"]
+  "keywords": [
+    "compact",
+    "context",
+    "handoff",
+    "mod",
+    "hooks"
+  ],
+  "userConfig": {
+    "warnEnabled": {
+      "type": "boolean",
+      "title": "Warn before auto-compaction",
+      "description": "Remind the agent to write unsaved notes to disk shortly before auto-compaction runs.",
+      "default": true
+    },
+    "warnPercent": {
+      "type": "number",
+      "title": "Warn at (% of window)",
+      "description": "How close to the compaction point, as a percent of the compaction window, the reminder is sent.",
+      "default": 8,
+      "min": 1,
+      "max": 50
+    },
+    "notesFile": {
+      "type": "string",
+      "title": "Notes file",
+      "description": "Where the reminder suggests the agent writes its notes.",
+      "default": "./tmp/context-notes.md"
+    }
+  }
 }

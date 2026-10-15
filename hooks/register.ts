@@ -1,5 +1,6 @@
 import type { Register, SessionMessage } from 'claude-code'
 import { extractPaths, slimToolUse, slimToolResult } from './slim'
+import { isNearCompaction, isRearmed, reminderText } from './warn'
 
 const KEEP_TAIL = 4 // text messages (user and assistant, no tool calls or results) kept verbatim after the summary
 const MAX_TRANSCRIPT = 600_000 // chars handed to the summarizer
@@ -99,9 +100,45 @@ function renderSummary(s: any): string {
   ].join('\n')
 }
 
-export const register: Register = (on) => {
+// The reminder before auto-compaction. Module variables reset on a hot reload, which only re-arms it.
+const warn = { isEnabled: true, marginPercent: 8, notesFile: './tmp/context-notes.md', isWarned: false, threshold: 0, window: 0, readAt: 0 }
+const THRESHOLD_TTL_MS = 60_000 // the compaction point moves little; the costly read is repeated at most this often
+
+async function warnBeforeCompaction($: any, e: any, next: any): Promise<unknown> {
+  const result = await next(e)
+  if (!warn.isEnabled || e.agentId || !result || result.deny) return result
+
+  const now = await $.clock.now()
+  if (warn.threshold === 0 || now - warn.readAt > THRESHOLD_TTL_MS) {
+    const b = (await $.session.usage({ breakdown: 'summary' })).context.breakdown
+    warn.readAt = now
+    if (b?.autoCompactThreshold && b.rawMaxTokens) {
+      warn.threshold = b.autoCompactThreshold
+      warn.window = b.rawMaxTokens
+    }
+  }
+  if (warn.threshold === 0) return result
+
+  const tokens = (await $.session.usage()).context.tokens
+  if (tokens === undefined) return result
+  if (warn.isWarned) {
+    if (isRearmed(tokens, warn.threshold, warn.window, warn.marginPercent)) warn.isWarned = false
+    return result
+  }
+  if (!isNearCompaction(tokens, warn.threshold, warn.window, warn.marginPercent)) return result
+
+  warn.isWarned = true
+  return { ...result, context: [...(result.context ?? []), reminderText(tokens, warn.threshold, warn.notesFile)] }
+}
+
+export const register: Register = (on, options) => {
+  warn.isEnabled = options.warnEnabled !== false
+  warn.marginPercent = Number(options.warnPercent) > 0 ? Number(options.warnPercent) : 8
+  warn.notesFile = String(options.notesFile || './tmp/context-notes.md')
+
   // auto and manual (/compact) both go through the haiku summary; precompute/plugin pass straight through
   on('session.compact', async ($, e, next) => {
+    warn.isWarned = false // the context is about to shrink: arm the reminder again
     if (e.trigger !== 'auto' && e.trigger !== 'manual') return next(e)
     try {
       const msgs = e.messages
@@ -131,4 +168,6 @@ export const register: Register = (on) => {
       return next(e)
     }
   }).catch(($, e, next) => next(e))
+
+  on('tool.call', warnBeforeCompaction).catch(async ($, e, next) => next(e))
 }

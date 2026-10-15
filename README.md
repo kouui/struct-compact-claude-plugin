@@ -25,12 +25,45 @@ Or try it from a checkout without installing: `claude --plugin-dir <this folder>
   - tool results: `ok <n> chars`, or bare `ERR` for errors
 - The summarizer may also read files itself (`--allowedTools Read,Grep,Glob`).
 
+## Warning before auto-compaction
+
+Tool results are slimmed before they are summarized, so what an agent learned from a file it read or a command it ran is easily lost. Shortly before auto-compaction runs, the next tool result carries a short reminder for the model (never shown to you):
+
+> Context is about 37k tokens from automatic compaction. Before it happens, write anything valuable that is not on disk yet (decisions and their reasons, findings from files you read or commands you ran, open questions, next steps) to one notes file (for example ./tmp/context-notes.md), then continue the current task. Do not stop to ask. Keep the note short; the compaction summary lists files you wrote.
+
+The files it writes appear in the summary's `must_read_files`, so the notes are read again after compaction.
+
+- Sent once per compaction cycle, from the main session only (not subagents), and armed again after compaction or when the context has fallen back by twice the margin.
+- The distance is measured to the point where auto-compaction runs (`autoCompactThreshold`), as a percent of the compaction window (`autoCompactWindow`).
+
+### Options
+
+Set them in `/config` (rows named after the plugin), or in `settings.json`:
+
+```json
+{
+  "pluginConfigs": {
+    "struct-compact": {
+      "options": { "warnPercent": 10, "notesFile": "./docs/notes.md", "warnEnabled": true }
+    }
+  }
+}
+```
+
+| Option | Default | Meaning |
+| --- | --- | --- |
+| `warnEnabled` | `true` | Turn the reminder off with `false` |
+| `warnPercent` | `8` | Remind when this percent of the compaction window is left before compaction (1 to 50) |
+| `notesFile` | `./tmp/context-notes.md` | The file name the reminder suggests |
+
 ## Layout
 
 ```text
 .claude-plugin/plugin.json
 hooks/hooks.json     # { "modules": ["./register.ts"] }
-hooks/register.ts    # session.compact handler, summary schema, rendering
+hooks/register.ts    # session.compact handler, summary schema, rendering; tool.call reminder
+hooks/warn.ts        # pure helpers of the reminder
+tests/warn.test.ts
 hooks/slim.ts        # rule-based slimming of tool calls and results
 tsconfig.json        # extends .claude-plugin/types/tsconfig.json (editor typings only)
 ```
