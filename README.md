@@ -1,6 +1,6 @@
 # struct-compact-claude-plugin
 
-Claude Code mod (plugin name `struct-compact`). On `auto` and `manual` compaction it slims the transcript (text verbatim; tool calls reduced to a name and the file paths they read/wrote/deleted, some tools ignored; results to one-line notes), has `claude -p --model haiku` write a structured handoff (original tasks, must-read files, progress, cautions, key decisions), and returns that plus the last 4 text messages (user and assistant; tool calls and results excluded). Any failure falls back to the engine's default compaction.
+Claude Code mod (plugin name `struct-compact`). On `auto` and `manual` compaction it slims the transcript (text verbatim; tool calls reduced to a name and the file paths they read/wrote/deleted, some tools ignored; results to one-line notes), has `claude -p --model haiku` write a structured handoff (original tasks, related files, progress, cautions, key decisions), and returns that plus the last 4 text messages (user and assistant; tool calls and results excluded). Any failure falls back to the engine's default compaction.
 
 ## Install
 
@@ -31,7 +31,7 @@ Tool results are slimmed before they are summarized, so what an agent learned fr
 
 > Context is about 37k tokens from automatic compaction. Before it happens, write anything valuable that is not on disk yet (decisions and their reasons, findings from files you read or commands you ran, open questions, next steps) to one notes file (for example ./tmp/context-notes.md), then continue the current task. Do not stop to ask. Keep the note short; the compaction summary lists files you wrote.
 
-The files it writes appear in the summary's `must_read_files`, so the notes are read again after compaction.
+The files it writes appear in the summary's `related_files`, so the notes are read again after compaction.
 
 - Sent once per compaction cycle, from the main session only (not subagents), and armed again after compaction or when the context has fallen back by twice the margin.
 - The distance is measured to the point where auto-compaction really runs: the engine's `autoCompactThreshold`, lowered by `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE` when that is set (500k window, override 90: 467k reported, about 432k used), as a percent of the compaction window (`autoCompactWindow`).

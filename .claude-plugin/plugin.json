@@ -1,6 +1,6 @@
 {
   "name": "struct-compact",
-  "version": "0.4.2",
+  "version": "0.5.0",
   "description": "Auto-compaction via a slimmed transcript summarized by `claude -p --model haiku` into a structured handoff.",
   "author": {
     "name": "kouui"

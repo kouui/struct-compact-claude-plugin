@@ -5,17 +5,22 @@ import { effectiveThreshold, isNearCompaction, isRearmed, reminderText } from '.
 const KEEP_TAIL = 4 // text messages (user and assistant, no tool calls or results) kept verbatim after the summary
 const MAX_TRANSCRIPT = 600_000 // chars handed to the summarizer
 const TIMEOUT_MS = 480_000
+const MAX_RELATED = 12 // files listed in the handoff
 
 const SCHEMA = {
   type: 'object',
   properties: {
     original_tasks: { type: 'array', items: { type: 'string' }, description: 'What the user originally asked for, in their own terms' },
-    must_read_files: {
+    related_files: {
       type: 'array',
       items: { type: 'object', properties: { path: { type: 'string' }, why: { type: 'string' } }, required: ['path', 'why'] },
-      // description: 'Files the agent must re-read to continue (specs, plans, notes, in-progress outputs)',
       description:
-        'Files the agent must re-read to continue (specs, plans, notes, in-progress outputs). ' +
+        `Files related to the next steps, most relevant first, at most ${MAX_RELATED}. Prefer, in this order: ` +
+        '(1) files that define the task goal or the way of working (task prompts, specs, plans, rules, notes the agent wrote for itself); ' +
+        '(2) files the next steps will read or edit. ' +
+        'Leave out files the session changed in a git repository; the agent gets their state from git status, git diff and git log. ' +
+        'Exception: always keep notes or handoff files the agent wrote for itself (for example under ./tmp/), because git does not describe them. ' +
+        'Leave out files that were only read for background and are not needed by the next steps. ' +
         'Never list the session transcript itself (the .jsonl file under .claude/projects).',
     },
     progress: {
@@ -29,7 +34,7 @@ const SCHEMA = {
       items: { type: 'object', properties: { decision: { type: 'string' }, reason: { type: 'string' } }, required: ['decision', 'reason'] },
     },
   },
-  required: ['original_tasks', 'must_read_files', 'progress', 'cautions', 'key_decisions'],
+  required: ['original_tasks', 'related_files', 'progress', 'cautions', 'key_decisions'],
 }
 
 const INSTRUCTION_BASE =
@@ -37,6 +42,7 @@ const INSTRUCTION_BASE =
   'tool calls are reduced to the tool name, a short description and the file paths they read (R), wrote (W), deleted (D) or merely referenced (O); ' +
   'tool results are reduced to ok/ERR notes. Produce a structured handoff so the agent can continue seamlessly after its context is reset. ' +
   'Be concrete (file paths, identifiers, numbers). Do not invent. Prefer the latest state over history. ' +
+  'List only a few related files: those that define the task goal or the way of working, and those the next steps need. Omit files whose changes the agent can recover from git. ' +
   'You may use Read/Grep/Glob to check a file, but the transcript is usually enough. ' +
   'Describe only the session in the transcript: never mention your own environment or working directory, and keep paths and variables exactly as they appear in the transcript.'
 
@@ -82,8 +88,9 @@ function renderSummary(s: any): string {
   // session transcripts live under .claude/projects; a project's own .jsonl data files stay allowed
   const isTranscript = (p: unknown) => /(^|[\\/])\.claude[\\/]projects[\\/]/i.test(String(p ?? ''))
   const files =
-    (s.must_read_files ?? [])
+    (s.related_files ?? [])
       .filter((f: any) => !isTranscript(f?.path))
+      .slice(0, MAX_RELATED)
       .map((f: any) => `- ${f.path} — ${f.why}`)
       .join('\n') || '- (none)'
   const dec = (s.key_decisions ?? []).map((d: any) => `- ${d.decision} (${d.reason})`).join('\n') || '- (none)'
@@ -91,12 +98,12 @@ function renderSummary(s: any): string {
     'This session is being continued after the context was compacted. The handoff below was written from the session history.',
     '',
     '## Original tasks', bullets(s.original_tasks),
-    '', '## Must-read files (re-read these before acting)', files,
+    '', '## Related files (read only what the next step needs; state of files changed in the session: git status / git diff / git log)', files,
     '', '## Progress', '### Done', bullets(s.progress?.done), '### In progress', bullets(s.progress?.in_progress), '### Next', bullets(s.progress?.next),
     '', '## Cautions', bullets(s.cautions),
     '', '## Key decisions', dec,
     '',
-    'Continue the work from where it stopped. Do not ask the user for confirmation and do not recap this summary; re-read the must-read files if you need their details, then carry on with the next step.',
+    'Continue the work from where it stopped. Do not ask the user for confirmation and do not recap this summary; read a related file only when the next step needs it, then carry on with the next step.',
   ].join('\n')
 }
 
