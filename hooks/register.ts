@@ -11,6 +11,16 @@ const SCHEMA = {
   type: 'object',
   properties: {
     original_tasks: { type: 'array', items: { type: 'string' }, description: 'What the user originally asked for, in their own terms' },
+    active_user_instructions: {
+      type: 'array',
+      items: { type: 'object', properties: { quote: { type: 'string' }, applies: { type: 'string' } }, required: ['quote', 'applies'] },
+      description:
+        'Instructions the user gave that are still in force: stop points or gates (for example "stop after verification, before the audit"), ' +
+        'things that need the user to confirm, prohibitions, ways of working, preferences. ' +
+        '`quote`: the words of the user, shortened only when long. `applies`: when it applies, for example "after verification, before starting the audit: stop and wait for the user". ' +
+        'If the user changed their mind on the same point, list only the latest instruction. Leave out instructions that were withdrawn or are already fulfilled. ' +
+        'Do not list the original task here; it belongs in original_tasks.',
+    },
     related_files: {
       type: 'array',
       items: { type: 'object', properties: { path: { type: 'string' }, why: { type: 'string' } }, required: ['path', 'why'] },
@@ -34,7 +44,7 @@ const SCHEMA = {
       items: { type: 'object', properties: { decision: { type: 'string' }, reason: { type: 'string' } }, required: ['decision', 'reason'] },
     },
   },
-  required: ['original_tasks', 'related_files', 'progress', 'cautions', 'key_decisions'],
+  required: ['original_tasks', 'active_user_instructions', 'related_files', 'progress', 'cautions', 'key_decisions'],
 }
 
 const INSTRUCTION_BASE =
@@ -93,17 +103,19 @@ function renderSummary(s: any): string {
       .slice(0, MAX_RELATED)
       .map((f: any) => `- ${f.path} — ${f.why}`)
       .join('\n') || '- (none)'
+  const act = (s.active_user_instructions ?? []).map((a: any) => `- "${a.quote}" (${a.applies})`).join('\n') || '- (none)'
   const dec = (s.key_decisions ?? []).map((d: any) => `- ${d.decision} (${d.reason})`).join('\n') || '- (none)'
   return [
     'This session is being continued after the context was compacted. The handoff below was written from the session history.',
     '',
     '## Original tasks', bullets(s.original_tasks),
+    '', '## Active user instructions (still in force; they take priority over Progress / Next)', act,
     '', '## Related files (read only what the next step needs; state of files changed in the session: git status / git diff / git log)', files,
     '', '## Progress', '### Done', bullets(s.progress?.done), '### In progress', bullets(s.progress?.in_progress), '### Next', bullets(s.progress?.next),
     '', '## Cautions', bullets(s.cautions),
     '', '## Key decisions', dec,
     '',
-    'Continue the work from where it stopped. Do not ask the user for confirmation and do not recap this summary; read a related file only when the next step needs it, then carry on with the next step.',
+    'Continue the work from where it stopped. Do not ask the user for confirmation for the next step, unless an active user instruction above says to stop or to confirm. Do not recap this summary; read a related file only when the next step needs it, then carry on with the next step.',
   ].join('\n')
 }
 

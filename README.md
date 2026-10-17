@@ -1,6 +1,6 @@
 # struct-compact-claude-plugin
 
-Claude Code mod (plugin name `struct-compact`). On `auto` and `manual` compaction it slims the transcript (text verbatim; tool calls reduced to a name and the file paths they read/wrote/deleted, some tools ignored; results to one-line notes), has `claude -p --model haiku` write a structured handoff (original tasks, related files, progress, cautions, key decisions), and returns that plus the last 4 text messages (user and assistant; tool calls and results excluded). Any failure falls back to the engine's default compaction.
+Claude Code mod (plugin name `struct-compact`). On `auto` and `manual` compaction it slims the transcript (text verbatim; tool calls reduced to a name and the file paths they read/wrote/deleted, some tools ignored; results to one-line notes), has `claude -p --model haiku` write a structured handoff (original tasks, active user instructions, related files, progress, cautions, key decisions), and returns that plus the last 4 text messages (user and assistant; tool calls and results excluded). Any failure falls back to the engine's default compaction.
 
 ## Install
 
